@@ -117,14 +117,65 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Get all users (members in current user's household)
+// Get all household members (protected route)
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
-    // For now, return only the current user as a member
-    // (In the future, this would return all users in the same household/group)
-    const user = await db.get('SELECT id, name, email, createdAt FROM users WHERE id = ?', [userId]);
-    res.json(user ? [user] : []);
+    // Return all members of the current user's household (including themselves and any added members)
+    const members = await db.all(`
+      SELECT id, name as title, createdAt
+      FROM household_members
+      WHERE householdId = ?
+      ORDER BY createdAt ASC
+    `, [userId]);
+    
+    // Add the current user to the beginning
+    const currentUser = await db.get('SELECT id, name, createdAt FROM users WHERE id = ?', [userId]);
+    if (currentUser) {
+      const allMembers = [
+        { id: currentUser.id, name: currentUser.name, createdAt: currentUser.createdAt },
+        ...members
+      ];
+      res.json(allMembers);
+    } else {
+      res.json(members);
+    }
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Create/add household member (protected route) - just a name, no account needed
+router.post('/', authMiddleware, async (req, res) => {
+  try {
+    const { name } = req.body;
+    const currentUserId = req.user.userId;
+
+    if (!name || name.trim() === '') {
+      return res.status(400).json({ error: 'Name is required' });
+    }
+
+    // Check if member already exists in this household
+    const existingMember = await db.get(
+      'SELECT id FROM household_members WHERE householdId = ? AND name = ?',
+      [currentUserId, name.trim()]
+    );
+    if (existingMember) {
+      return res.status(409).json({ error: 'This member already exists in your household' });
+    }
+
+    // Add the member (no account required!)
+    const memberId = require('uuid').v4();
+    await db.run(
+      'INSERT INTO household_members (id, householdId, name) VALUES (?, ?, ?)',
+      [memberId, currentUserId, name.trim()]
+    );
+
+    res.status(201).json({
+      message: 'Member added successfully',
+      id: memberId,
+      name: name.trim()
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -232,16 +283,31 @@ router.post('/:id/change-password', authMiddleware, async (req, res) => {
   }
 });
 
-// Delete user (protected route)
+// Delete household member (protected route)
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
-    // Users can only delete their own account
-    if (req.user.userId !== req.params.id) {
-      return res.status(403).json({ error: 'You can only delete your own account' });
-    }
+    const currentUserId = req.user.userId;
+    const memberId = req.params.id;
 
-    await db.run('DELETE FROM users WHERE id = ?', [req.params.id]);
-    res.json({ message: 'User deleted successfully' });
+    // If deleting themselves, delete the account
+    if (currentUserId === memberId) {
+      await db.run('DELETE FROM household_members WHERE householdId = ?', [currentUserId]);
+      await db.run('DELETE FROM users WHERE id = ?', [currentUserId]);
+      res.json({ message: 'Account deleted successfully' });
+    } else {
+      // Remove household member
+      const member = await db.get(
+        'SELECT id FROM household_members WHERE id = ? AND householdId = ?',
+        [memberId, currentUserId]
+      );
+      
+      if (!member) {
+        return res.status(404).json({ error: 'Member not found' });
+      }
+      
+      await db.run('DELETE FROM household_members WHERE id = ?', [memberId]);
+      res.json({ message: 'Member removed from household' });
+    }
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

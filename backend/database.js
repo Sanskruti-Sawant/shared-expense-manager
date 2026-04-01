@@ -88,8 +88,17 @@ const initialize = () => {
       settledAt DATETIME,
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (fromUser) REFERENCES users(id),
-      FOREIGN KEY (toUser) REFERENCES users(id)
-    )`);
+      FOREIGN KEY (toUser) REFERENCES users(id)    )`);
+
+    // Household Members table
+    db.run(`CREATE TABLE IF NOT EXISTS household_members (
+      id TEXT PRIMARY KEY,
+      householdId TEXT NOT NULL,
+      userId TEXT NOT NULL,
+      role TEXT DEFAULT 'member',
+      joinedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(householdId, userId),
+      FOREIGN KEY (userId) REFERENCES users(id)    )`);
 
     // Lightweight schema migrations for existing databases.
     db.run('ALTER TABLE expenses ADD COLUMN usedFromBudget INTEGER DEFAULT 0', (err) => {
