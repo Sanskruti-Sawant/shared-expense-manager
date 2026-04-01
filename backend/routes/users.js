@@ -117,11 +117,14 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Get all users (protected route - requires authentication)
+// Get all users (members in current user's household)
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const users = await db.all('SELECT id, name, email, createdAt FROM users ORDER BY createdAt DESC');
-    res.json(users);
+    const userId = req.user.userId;
+    // For now, return only the current user as a member
+    // (In the future, this would return all users in the same household/group)
+    const user = await db.get('SELECT id, name, email, createdAt FROM users WHERE id = ?', [userId]);
+    res.json(user ? [user] : []);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
