@@ -128,8 +128,12 @@ const initialize = () => {
 
     // Migration: Drop old household_members table if schema is wrong, recreate it
     db.all("PRAGMA table_info(household_members)", (err, columns) => {
-      if (!err && columns) {
+      if (err) {
+        console.error('Error checking household_members schema:', err.message);
+      } else if (columns) {
         const columnNames = columns.map(c => c.name);
+        console.log('Current household_members schema:', columnNames);
+        
         // If the table has userId but not name, we need to recreate it
         if (columnNames.includes('userId') && !columnNames.includes('name')) {
           console.log('Recreating household_members table with correct schema...');
