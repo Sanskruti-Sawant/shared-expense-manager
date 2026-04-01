@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MdAdd, MdHourglassBottom, MdCheckCircle, MdDateRange, MdEmojiEvents } from 'react-icons/md';
 import { FaUser } from 'react-icons/fa';
+import { taskAPI } from '../utils/api';
 
 function TaskTracker({ scrollY, tasks, users, onTasksChange }) {
   const [showForm, setShowForm] = useState(false);
@@ -21,19 +22,13 @@ function TaskTracker({ scrollY, tasks, users, onTasksChange }) {
 
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        setFormData({ title: '', assignedTo: '', priority: 'Medium', dueDate: '' });
-        setShowForm(false);
-        onTasksChange();
-      }
+      await taskAPI.create(formData);
+      setFormData({ title: '', assignedTo: '', priority: 'Medium', dueDate: '' });
+      setShowForm(false);
+      onTasksChange();
     } catch (error) {
       console.error('Error adding task:', error);
+      alert('Error adding task: ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }

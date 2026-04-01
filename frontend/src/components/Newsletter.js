@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { taskAPI } from '../utils/api';
 
 function TaskTracker({ scrollY, tasks, users, onTasksChange }) {
   const [newTask, setNewTask] = useState({
@@ -18,18 +19,12 @@ function TaskTracker({ scrollY, tasks, users, onTasksChange }) {
 
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/tasks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newTask)
-      });
-
-      if (response.ok) {
-        setNewTask({ title: '', assignedTo: '', priority: 'Medium', dueDate: '' });
-        onTasksChange();
-      }
+      await taskAPI.create(newTask);
+      setNewTask({ title: '', assignedTo: '', priority: 'Medium', dueDate: '' });
+      onTasksChange();
     } catch (error) {
       console.error('Error adding task:', error);
+      alert('Error adding task: ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }

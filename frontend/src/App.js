@@ -13,7 +13,9 @@ import SettlementSummary from './components/SettlementSummary';
 import ProfilePage from './components/ProfilePage';
 import Footer from './components/Footer';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = process.env.NODE_ENV === 'production'
+  ? 'https://shared-expense-backend.onrender.com/api'
+  : 'http://localhost:5000/api';
 
 function MainApp() {
   const [scrollY, setScrollY] = useState(0);

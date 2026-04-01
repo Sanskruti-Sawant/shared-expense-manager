@@ -123,7 +123,7 @@ router.get('/', authMiddleware, async (req, res) => {
     const userId = req.user.userId;
     // Return all members of the current user's household (including themselves and any added members)
     const members = await db.all(`
-      SELECT id, name as title, createdAt
+      SELECT id, name, createdAt
       FROM household_members
       WHERE householdId = ?
       ORDER BY createdAt ASC

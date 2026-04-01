@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MdAdd, MdHourglassBottom, MdCheckCircle, MdBarChart, MdTrendingUp, MdRestaurant, MdHome, MdLightbulb, MdMovie, MdDirectionsCar, MdLocalShipping } from 'react-icons/md';
+import { expenseAPI } from '../utils/api';
 
 function ExpenseTracker({ scrollY, expenses, users, onExpensesChange }) {
   const [showForm, setShowForm] = useState(false);
@@ -63,26 +64,19 @@ function ExpenseTracker({ scrollY, expenses, users, onExpensesChange }) {
 
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/expenses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        const newExpense = await response.json();
-        if (formData.deductFromBudget) {
-          setExpensesBudgetMap({
-            ...expensesBudgetMap,
-            [newExpense.id]: true
-          });
-        }
-        setFormData({ description: '', amount: '', paidBy: '', category: 'Food', participants: [], deductFromBudget: true });
-        setShowForm(false);
-        onExpensesChange();
+      const newExpense = await expenseAPI.create(formData);
+      if (formData.deductFromBudget) {
+        setExpensesBudgetMap({
+          ...expensesBudgetMap,
+          [newExpense.data.id]: true
+        });
       }
+      setFormData({ description: '', amount: '', paidBy: '', category: 'Food', participants: [], deductFromBudget: true });
+      setShowForm(false);
+      onExpensesChange();
     } catch (error) {
       console.error('Error adding expense:', error);
+      alert('Error adding expense: ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }

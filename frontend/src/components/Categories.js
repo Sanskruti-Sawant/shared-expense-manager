@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { userAPI } from '../utils/api';
 
 function UserManagement({ scrollY, users, onUsersChange }) {
   const [newUserName, setNewUserName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleAddUser = async (e) => {
     e.preventDefault();
@@ -10,17 +12,12 @@ function UserManagement({ scrollY, users, onUsersChange }) {
 
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/users', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newUserName })
-      });
-
-      if (response.ok) {
-        setNewUserName('');
-        onUsersChange();
-      }
+      setError('');
+      await userAPI.create({ name: newUserName });
+      setNewUserName('');
+      onUsersChange();
     } catch (error) {
+      setError('Error adding member: ' + (error.response?.data?.error || error.message));
       console.error('Error adding user:', error);
     } finally {
       setLoading(false);
@@ -30,6 +27,8 @@ function UserManagement({ scrollY, users, onUsersChange }) {
   return (
     <section className="categories">
       <h2 className="section-title" style={{ marginBottom: '1rem' }}>👥 Household Members</h2>
+      
+      {error && <div style={{ color: '#ff6b6b', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
       
       <form onSubmit={handleAddUser} style={{ maxWidth: '600px', margin: '0 auto 2rem', display: 'flex', gap: '0.5rem' }}>
         <input

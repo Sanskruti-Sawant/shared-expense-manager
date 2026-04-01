@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { expenseAPI } from '../utils/api';
 
 function ExpenseTracker({ scrollY, expenses, users, onExpensesChange }) {
   const [showForm, setShowForm] = useState(false);
@@ -22,17 +23,16 @@ function ExpenseTracker({ scrollY, expenses, users, onExpensesChange }) {
 
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:5000/api/expenses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        setFormData({ description: '', amount: '', paidBy: '', category: 'Food', participants: [] });
-        setShowForm(false);
-        onExpensesChange();
-      }
+      await expenseAPI.create(formData);
+      setFormData({ description: '', amount: '', paidBy: '', category: 'Food', participants: [] });
+      setShowForm(false);
+      onExpensesChange();
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      alert('Error adding expense: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setLoading(false);
+    }
     } catch (error) {
       console.error('Error adding expense:', error);
     } finally {
