@@ -119,6 +119,39 @@ const initialize = () => {
       }
     });
 
+    // Migration: Add name column to household_members if it doesn't exist
+    db.run('ALTER TABLE household_members ADD COLUMN name TEXT', (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.error('Migration info (household_members name):', err.message);
+      }
+    });
+
+    // Migration: Drop old household_members table if schema is wrong, recreate it
+    db.all("PRAGMA table_info(household_members)", (err, columns) => {
+      if (!err && columns) {
+        const columnNames = columns.map(c => c.name);
+        // If the table has userId but not name, we need to recreate it
+        if (columnNames.includes('userId') && !columnNames.includes('name')) {
+          console.log('Recreating household_members table with correct schema...');
+          db.run('DROP TABLE IF EXISTS household_members', (dropErr) => {
+            if (!dropErr) {
+              db.run(`CREATE TABLE household_members (
+                id TEXT PRIMARY KEY,
+                householdId TEXT NOT NULL,
+                name TEXT NOT NULL,
+                createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE(householdId, name),
+                FOREIGN KEY (householdId) REFERENCES users(id)
+              )`, (createErr) => {
+                if (createErr) console.error('Error recreating household_members:', createErr.message);
+                else console.log('Successfully recreated household_members table');
+              });
+            }
+          });
+        }
+      }
+    });
+
     console.log('Database tables initialized');
   });
 };
