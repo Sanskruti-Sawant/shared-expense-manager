@@ -9,6 +9,18 @@ const api = axios.create({
   }
 });
 
+// Add auth token to every request
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 // User API
 export const userAPI = {
   getAll: () => api.get('/users'),
