@@ -1,6 +1,7 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../database');
+const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -8,15 +9,20 @@ const getCurrentMonth = () => new Date().toISOString().slice(0, 7);
 
 const isValidMonth = (month) => /^\d{4}-\d{2}$/.test(month);
 
-// Get all expenses
-router.get('/', async (req, res) => {
+// Get all expenses for current user
+router.get('/', authMiddleware, async (req, res) => {
   try {
+    const userId = req.user.userId;
+    
     const expenses = await db.all(`
       SELECT e.*, u.name as paidByName 
       FROM expenses e 
       LEFT JOIN users u ON e.paidBy = u.id 
+      WHERE e.paidBy = ? OR e.id IN (
+        SELECT expenseId FROM expense_participants WHERE userId = ?
+      )
       ORDER BY e.date DESC
-    `);
+    `, [userId, userId]);
     
     // Get participants for each expense
     for (let expense of expenses) {
@@ -35,7 +41,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get monthly budget
-router.get('/budget/:month?', async (req, res) => {
+router.get('/budget/:month?', authMiddleware, async (req, res) => {
   try {
     const month = req.params.month || getCurrentMonth();
     if (!isValidMonth(month)) {
@@ -54,7 +60,7 @@ router.get('/budget/:month?', async (req, res) => {
 });
 
 // Create or update monthly budget
-router.put('/budget/:month', async (req, res) => {
+router.put('/budget/:month', authMiddleware, async (req, res) => {
   try {
     const month = req.params.month;
     const total = parseFloat(req.body.total);
@@ -92,14 +98,17 @@ router.put('/budget/:month', async (req, res) => {
 });
 
 // Get expense by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', authMiddleware, async (req, res) => {
   try {
+    const userId = req.user.userId;
     const expense = await db.get(`
       SELECT e.*, u.name as paidByName 
       FROM expenses e 
       LEFT JOIN users u ON e.paidBy = u.id 
-      WHERE e.id = ?
-    `, [req.params.id]);
+      WHERE e.id = ? AND (e.paidBy = ? OR e.id IN (
+        SELECT expenseId FROM expense_participants WHERE userId = ?
+      ))
+    `, [req.params.id, userId, userId]);
     
     if (!expense) return res.status(404).json({ error: 'Expense not found' });
     
@@ -117,7 +126,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create expense
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
   try {
     const { description, amount, paidBy, category, splitWith, useBudget, expenseMonth } = req.body;
     const parsedAmount = parseFloat(amount);
@@ -183,14 +192,20 @@ router.post('/', async (req, res) => {
 });
 
 // Update expense
-router.put('/:id', async (req, res) => {
+router.put('/:id', authMiddleware, async (req, res) => {
   try {
+    const userId = req.user.userId;
     const { description, amount, category } = req.body;
     const parsedAmount = parseFloat(amount);
     const existingExpense = await db.get('SELECT * FROM expenses WHERE id = ?', [req.params.id]);
 
     if (!existingExpense) {
       return res.status(404).json({ error: 'Expense not found' });
+    }
+
+    // Only allow if user is the payer
+    if (existingExpense.paidBy !== userId) {
+      return res.status(403).json({ error: 'Only the payer can edit this expense' });
     }
 
     if (Number.isNaN(parsedAmount) || parsedAmount <= 0) {
@@ -230,11 +245,17 @@ router.put('/:id', async (req, res) => {
 });
 
 // Delete expense
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res) => {
   try {
+    const userId = req.user.userId;
     const expense = await db.get('SELECT * FROM expenses WHERE id = ?', [req.params.id]);
     if (!expense) {
       return res.status(404).json({ error: 'Expense not found' });
+    }
+
+    // Only allow if user is the payer
+    if (expense.paidBy !== userId) {
+      return res.status(403).json({ error: 'Only the payer can delete this expense' });
     }
 
     await db.run('DELETE FROM expense_participants WHERE expenseId = ?', [req.params.id]);

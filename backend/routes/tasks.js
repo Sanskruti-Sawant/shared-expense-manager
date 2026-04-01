@@ -1,18 +1,21 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../database');
+const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
 // Get all tasks
-router.get('/', async (req, res) => {
+router.get('/', authMiddleware, async (req, res) => {
   try {
+    const userId = req.user.userId;
     const tasks = await db.all(`
       SELECT t.*, u.name as assignedToName 
       FROM tasks t 
       LEFT JOIN users u ON t.assignedTo = u.id 
+      WHERE t.createdBy = ? OR t.assignedTo = ?
       ORDER BY t.dueDate ASC, t.createdAt DESC
-    `);
+    `, [userId, userId]);
     res.json(tasks);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -20,14 +23,15 @@ router.get('/', async (req, res) => {
 });
 
 // Get task by ID
-router.get('/:id', async (req, res) => {
+router.get('/:id', authMiddleware, async (req, res) => {
   try {
+    const userId = req.user.userId;
     const task = await db.get(`
       SELECT t.*, u.name as assignedToName 
       FROM tasks t 
       LEFT JOIN users u ON t.assignedTo = u.id 
-      WHERE t.id = ?
-    `, [req.params.id]);
+      WHERE t.id = ? AND (t.createdBy = ? OR t.assignedTo = ?)
+    `, [req.params.id, userId, userId]);
     
     if (!task) return res.status(404).json({ error: 'Task not found' });
     
