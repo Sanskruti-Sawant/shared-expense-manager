@@ -1,0 +1,16 @@
+.animated-background {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #0a0015;
+  image-rendering: auto;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+/* Ensure animations are smooth */
+@supports (image-rendering: -webkit-optimize-contrast) {
+  .animated-background {
+    image-rendering: -webkit-optimize-contrast;
+  }
+}

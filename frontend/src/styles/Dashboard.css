@@ -1,0 +1,85 @@
+/* Dashboard Styles */
+.user-management,
+.expense-management,
+.task-management,
+.balances-dashboard {
+  width: 100%;
+}
+
+.add-user-form,
+.add-expense-form,
+.add-task-form {
+  margin-bottom: 1.2rem;
+}
+
+.settlements-section {
+  margin-top: 0.2rem;
+}
+
+.settlements-section h3 {
+  margin-bottom: 1rem;
+  font-size: 1.08rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.budget-summary-card {
+  margin-bottom: 1.1rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(213, 176, 216, 0.24);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(38, 12, 53, 0.72), rgba(62, 20, 68, 0.64));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  position: relative;
+  overflow: hidden;
+}
+
+.budget-summary-card p {
+  margin: 0.2rem 0;
+  color: rgba(244, 236, 245, 0.95);
+}
+
+.budget-progress {
+  height: 14px;
+  width: 100%;
+  margin-top: 0.65rem;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(181, 146, 181, 0.28);
+  border: 1px solid rgba(213, 176, 216, 0.18);
+}
+
+.budget-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 300ms ease;
+  background: linear-gradient(90deg, #d5b0d8, #b492b5);
+  box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.2);
+}
+
+.budget-progress.budget-warning .budget-progress-fill {
+  background: #b492b5;
+}
+
+.budget-progress.budget-critical .budget-progress-fill {
+  background: #8a6492;
+}
+
+.budget-status-text {
+  margin-top: 0.55rem;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.budget-status-text.budget-safe {
+  color: #e8d5ea;
+}
+
+.budget-status-text.budget-warning {
+  color: #d5b0d8;
+}
+
+.budget-status-text.budget-critical {
+  color: #b492b5;
+}

@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Background GIF Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0015;
+            color: #ffffff;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #c084a8, #e8c4d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #a89aad;
+            font-size: 1.1em;
+        }
+
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 40px;
+        }
+
+        .preview-section {
+            border: 1px solid rgba(192, 132, 168, 0.3);
+            border-radius: 16px;
+            padding: 20px;
+            background: rgba(38, 12, 53, 0.4);
+            backdrop-filter: blur(15px);
+        }
+
+        .preview-section h2 {
+            margin-bottom: 20px;
+            color: #e8c4d4;
+            font-size: 1.3em;
+        }
+
+        #previewCanvas {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            display: block;
+            background: #0a0015;
+        }
+
+        .controls-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-group {
+            border: 1px solid rgba(192, 132, 168, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            background: rgba(38, 12, 53, 0.4);
+            backdrop-filter: blur(15px);
+        }
+
+        .control-group h3 {
+            margin-bottom: 15px;
+            color: #e8c4d4;
+            font-size: 1.1em;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            font-size: 0.95em;
+            color: #d4c5d4;
+            font-weight: 500;
+        }
+
+        input[type="number"],
+        input[type="range"],
+        select {
+            padding: 10px 12px;
+            border: 1px solid rgba(192, 132, 168, 0.25);
+            border-radius: 8px;
+            background: rgba(26, 10, 46, 0.6);
+            color: #ffffff;
+            font-family: 'Poppins', sans-serif;
+            font-size: 1em;
+            transition: all 0.3s ease;
+        }
+
+        input[type="number"]:focus,
+        input[type="range"]:focus,
+        select:focus {
+            border-color: rgba(192, 132, 168, 0.6);
+            box-shadow: 0 0 0 3px rgba(192, 132, 168, 0.15);
+            outline: none;
+        }
+
+        .range-display {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9em;
+            color: #a89aad;
+            margin-top: 5px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #c084a8, #e8c4d4);
+            color: #0a0015;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(192, 132, 168, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: rgba(192, 132, 168, 0.2);
+            color: #e8c4d4;
+            border: 1px solid rgba(192, 132, 168, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(192, 132, 168, 0.3);
+        }
+
+        .btn-secondary:disabled,
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .progress-section {
+            display: none;
+            border: 1px solid rgba(192, 132, 168, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            background: rgba(38, 12, 53, 0.4);
+            backdrop-filter: blur(15px);
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(26, 10, 46, 0.6);
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 10px;
+            border: 1px solid rgba(192, 132, 168, 0.25);
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #c084a8, #e8c4d4);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0a0015;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .status-text {
+            color: #a89aad;
+            font-size: 0.95em;
+            margin-top: 10px;
+        }
+
+        .info-section {
+            border: 1px solid rgba(192, 132, 168, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            background: rgba(38, 12, 53, 0.4);
+            backdrop-filter: blur(15px);
+            grid-column: 1 / -1;
+        }
+
+        .info-section h3 {
+            color: #e8c4d4;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .info-section p {
+            color: #a89aad;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+
+        .info-section p:last-child {
+            margin-bottom: 0;
+        }
+
+        .file-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(192, 132, 168, 0.1);
+            border-left: 3px solid #c084a8;
+            border-radius: 4px;
+        }
+
+        .file-info strong {
+            color: #e8c4d4;
+        }
+
+        @media (max-width: 768px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Animated Background GIF Generator</h1>
+            <p>Create high-quality animated GIFs for your login page background</p>
+        </div>
+
+        <div class="content">
+            <!-- Preview -->
+            <div class="preview-section">
+                <h2>Live Preview</h2>
+                <canvas id="previewCanvas" width="1280" height="720"></canvas>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls-section">
+                <!-- Settings -->
+                <div class="control-group">
+                    <h3>⚙️ Settings</h3>
+
+                    <div class="form-group">
+                        <label for="width">Width (px)</label>
+                        <input type="number" id="width" value="1920" min="640" max="4096" step="640">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="height">Height (px)</label>
+                        <input type="number" id="height" value="1080" min="360" max="2160" step="360">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="duration">Duration (seconds)</label>
+                        <input type="range" id="duration" min="1" max="15" value="4" step="1">
+                        <div class="range-display">
+                            <span>1s</span>
+                            <span id="durationValue">4s</span>
+                            <span>15s</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="frameRate">Frame Rate (fps)</label>
+                        <input type="range" id="frameRate" min="10" max="60" value="30" step="5">
+                        <div class="range-display">
+                            <span>10 fps</span>
+                            <span id="fpsValue">30 fps</span>
+                            <span>60 fps</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="quality">Quality</label>
+                        <input type="range" id="quality" min="1" max="30" value="10" step="1">
+                        <div class="range-display">
+                            <span>Low (Small file)</span>
+                            <span id="qualityValue">10</span>
+                            <span>High (Large file)</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="particleCount">Particle Count</label>
+                        <input type="range" id="particleCount" min="20" max="200" value="50" step="10">
+                        <div class="range-display">
+                            <span>20</span>
+                            <span id="particleValue">50</span>
+                            <span>200</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="control-group">
+                    <h3>📥 Actions</h3>
+                    <div class="button-group">
+                        <button class="btn-secondary" id="previewBtn">Preview Animation</button>
+                        <button class="btn-primary" id="generateBtn">Generate GIF</button>
+                    </div>
+                </div>
+
+                <!-- Progress -->
+                <div class="progress-section" id="progressSection">
+                    <h3>⏳ Generating...</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%">
+                            <span id="progressText">0%</span>
+                        </div>
+                    </div>
+                    <div class="status-text" id="statusText">Please wait...</div>
+                </div>
+            </div>
+
+            <!-- Info -->
+            <div class="info-section">
+                <h3>ℹ️ About This Generator</h3>
+                <p>
+                    This tool creates animated GIF backgrounds featuring:
+                </p>
+                <ul style="padding-left: 20px; color: #a89aad;">
+                    <li>Floating particles with color connections (representing collaboration)</li>
+                    <li>Rotating geometric shapes (sphere, cube, triangle) in pink/purple tones</li>
+                    <li>Subtle grid overlay and radial gradient effects</li>
+                    <li>Smooth animations that match your website's aesthetic</li>
+                </ul>
+                <p style="margin-top: 15px;">
+                    Generated GIF files can be used as:
+                </p>
+                <ul style="padding-left: 20px; color: #a89aad;">
+                    <li>Static background image in CSS (convert to videos for better performance)</li>
+                    <li>Animated background using HTML5 Video tag</li>
+                    <li>Part of your asset library for quick testing</li>
+                </ul>
+                <div class="file-info">
+                    <strong>💾 File Size Estimate:</strong> Adjusting quality and frame rate affects file size.
+                    Lower quality + fewer frames = smaller file. Higher quality + more frames = larger file.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Include gif.js library for GIF generation -->
+    <script src="https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.js"></script>
+
+    <script>
+        // Elements
+        const canvas = document.getElementById('previewCanvas');
+        const ctx = canvas.getContext('2d');
+        const previewBtn = document.getElementById('previewBtn');
+        const generateBtn = document.getElementById('generateBtn');
+        const progressSection = document.getElementById('progressSection');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const statusText = document.getElementById('statusText');
+
+        // Settings
+        const widthInput = document.getElementById('width');
+        const heightInput = document.getElementById('height');
+        const durationInput = document.getElementById('duration');
+        const frameRateInput = document.getElementById('frameRate');
+        const qualityInput = document.getElementById('quality');
+        const particleCountInput = document.getElementById('particleCount');
+
+        // Update display values
+        durationInput.addEventListener('input', (e) => {
+            document.getElementById('durationValue').textContent = e.target.value + 's';
+        });
+
+        frameRateInput.addEventListener('input', (e) => {
+            document.getElementById('fpsValue').textContent = e.target.value + ' fps';
+        });
+
+        qualityInput.addEventListener('input', (e) => {
+            document.getElementById('qualityValue').textContent = e.target.value;
+        });
+
+        particleCountInput.addEventListener('input', (e) => {
+            document.getElementById('particleValue').textContent = e.target.value;
+        });
+
+        // Animation function
+        class AnimationGenerator {
+            constructor(canvas, settings) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.particles = [];
+                this.shapes = [];
+                this.time = 0;
+                this.settings = settings;
+                this.init();
+            }
+
+            init() {
+                // Initialize particles
+                for (let i = 0; i < this.settings.particleCount; i++) {
+                    this.particles.push({
+                        x: Math.random() * this.canvas.width,
+                        y: Math.random() * this.canvas.height,
+                        vx: (Math.random() - 0.5) * 1,
+                        vy: (Math.random() - 0.5) * 1,
+                        size: Math.random() * 2 + 0.5,
+                        opacity: Math.random() * 0.4 + 0.2
+                    });
+                }
+
+                // Initialize shapes
+                const colors = ['#c084a8', '#e8c4d4', '#d8b3d0'];
+                const shapes = ['circle', 'square', 'triangle'];
+                for (let i = 0; i < 6; i++) {
+                    this.shapes.push({
+                        x: Math.random() * this.canvas.width * 0.8 + this.canvas.width * 0.1,
+                        y: Math.random() * this.canvas.height * 0.8 + this.canvas.height * 0.1,
+                        vx: (Math.random() - 0.5) * 0.3,
+                        vy: (Math.random() - 0.5) * 0.3,
+                        size: Math.random() * 30 + 20,
+                        rotation: Math.random() * Math.PI * 2,
+                        rotationSpeed: (Math.random() - 0.5) * 0.03,
+                        type: shapes[Math.floor(Math.random() * shapes.length)],
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        opacity: 0.15
+                    });
+                }
+            }
+
+            update() {
+                this.time++;
+
+                // Update particles
+                this.particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.x < 0) p.x = this.canvas.width;
+                    if (p.x > this.canvas.width) p.x = 0;
+                    if (p.y < 0) p.y = this.canvas.height;
+                    if (p.y > this.canvas.height) p.y = 0;
+                });
+
+                // Update shapes
+                this.shapes.forEach(s => {
+                    s.x += s.vx;
+                    s.y += s.vy;
+                    s.rotation += s.rotationSpeed;
+                    if (s.x < -50) s.x = this.canvas.width + 50;
+                    if (s.x > this.canvas.width + 50) s.x = -50;
+                    if (s.y < -50) s.y = this.canvas.height + 50;
+                    if (s.y > this.canvas.height + 50) s.y = -50;
+                });
+            }
+
+            draw() {
+                // Background
+                this.ctx.fillStyle = '#0a0015';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Gradient overlay
+                const gradient = this.ctx.createRadialGradient(
+                    this.canvas.width / 2,
+                    this.canvas.height / 2,
+                    0,
+                    this.canvas.width / 2,
+                    this.canvas.height / 2,
+                    Math.max(this.canvas.width, this.canvas.height)
+                );
+                gradient.addColorStop(0, 'rgba(192, 132, 168, 0.1)');
+                gradient.addColorStop(0.5, 'rgba(152, 100, 128, 0.05)');
+                gradient.addColorStop(1, 'rgba(10, 0, 21, 0)');
+                this.ctx.fillStyle = gradient;
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+                // Draw shapes
+                this.shapes.forEach(s => {
+                    this.ctx.save();
+                    this.ctx.translate(s.x, s.y);
+                    this.ctx.rotate(s.rotation);
+                    this.ctx.fillStyle = s.color;
+                    this.ctx.globalAlpha = s.opacity;
+
+                    switch (s.type) {
+                        case 'circle':
+                            this.ctx.beginPath();
+                            this.ctx.arc(0, 0, s.size, 0, Math.PI * 2);
+                            this.ctx.fill();
+                            break;
+                        case 'square':
+                            this.ctx.fillRect(-s.size / 2, -s.size / 2, s.size, s.size);
+                            break;
+                        case 'triangle':
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(0, -s.size / 2);
+                            this.ctx.lineTo(s.size / 2, s.size / 2);
+                            this.ctx.lineTo(-s.size / 2, s.size / 2);
+                            this.ctx.closePath();
+                            this.ctx.fill();
+                            break;
+                    }
+
+                    this.ctx.globalAlpha = 1;
+                    this.ctx.restore();
+                });
+
+                // Draw particles
+                this.particles.forEach(p => {
+                    this.ctx.fillStyle = '#c084a8';
+                    this.ctx.globalAlpha = p.opacity;
+                    this.ctx.beginPath();
+                    this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.ctx.globalAlpha = 1;
+                });
+
+                // Draw connections
+                const connectionDist = 150;
+                this.particles.forEach((p1, i) => {
+                    this.particles.slice(i + 1).forEach(p2 => {
+                        const dx = p1.x - p2.x;
+                        const dy = p1.y - p2.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < connectionDist) {
+                            this.ctx.strokeStyle = '#c084a8';
+                            this.ctx.globalAlpha = (1 - dist / connectionDist) * 0.15;
+                            this.ctx.lineWidth = 1;
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(p1.x, p1.y);
+                            this.ctx.lineTo(p2.x, p2.y);
+                            this.ctx.stroke();
+                            this.ctx.globalAlpha = 1;
+                        }
+                    });
+                });
+            }
+
+            render() {
+                this.update();
+                this.draw();
+            }
+        }
+
+        // Preview
+        let animationGen = null;
+        let previewAnimationId = null;
+
+        previewBtn.addEventListener('click', () => {
+            const width = parseInt(widthInput.value);
+            const height = parseInt(heightInput.value);
+
+            // Resize preview canvas to match aspect ratio
+            const aspectRatio = width / height;
+            const previewHeight = canvas.width / aspectRatio;
+            canvas.height = previewHeight;
+
+            const settings = {
+                particleCount: parseInt(particleCountInput.value)
+            };
+
+            animationGen = new AnimationGenerator(canvas, settings);
+
+            if (previewAnimationId) cancelAnimationFrame(previewAnimationId);
+
+            const animate = () => {
+                animationGen.render();
+                previewAnimationId = requestAnimationFrame(animate);
+            };
+
+            animate();
+            previewBtn.textContent = '⏹️ Stop Preview';
+            previewBtn.classList.add('active');
+
+            previewBtn.onclick = () => {
+                cancelAnimationFrame(previewAnimationId);
+                previewBtn.textContent = 'Preview Animation';
+                previewBtn.onclick = null;
+                previewBtn.classList.remove('active');
+            };
+        });
+
+        // Generate GIF
+        generateBtn.addEventListener('click', async () => {
+            if (!window.GIF) {
+                alert('gif.js library not loaded. Please try again.');
+                return;
+            }
+
+            generateBtn.disabled = true;
+            progressSection.classList.add('active');
+
+            try {
+                const width = parseInt(widthInput.value);
+                const height = parseInt(heightInput.value);
+                const duration = parseInt(durationInput.value) * 1000;
+                const frameRate = parseInt(frameRateInput.value);
+                const quality = parseInt(qualityInput.value);
+                const particleCount = parseInt(particleCountInput.value);
+
+                const frameCount = Math.ceil((duration / 1000) * frameRate);
+                const settings = { particleCount };
+
+                // Create canvas for GIF
+                const gifCanvas = document.createElement('canvas');
+                gifCanvas.width = width;
+                gifCanvas.height = height;
+
+                const gifGenerator = new AnimationGenerator(gifCanvas, settings);
+
+                // Create GIF encoder
+                const gif = new GIF({
+                    workers: 4,
+                    quality: quality,
+                    width: width,
+                    height: height,
+                    workerScript: 'https://cdn.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js'
+                });
+
+                // Render frames
+                for (let i = 0; i < frameCount; i++) {
+                    gifGenerator.render();
+
+                    // Add frame to GIF
+                    gif.addFrame(gifCanvas, { delay: 1000 / frameRate });
+
+                    // Update progress
+                    const progress = ((i + 1) / frameCount) * 100;
+                    progressFill.style.width = progress + '%';
+                    progressText.textContent = Math.round(progress) + '%';
+                    statusText.textContent = `Rendering frame ${i + 1}/${frameCount}...`;
+
+                    // Allow UI update
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
+
+                statusText.textContent = 'Encoding GIF...';
+
+                //Render GIF
+                gif.on('finished', function (blob) {
+                    // Calculate file size
+                    const sizeMB = (blob.size / (1024 * 1024)).toFixed(2);
+
+                    statusText.innerHTML = `✅ GIF generated successfully! Size: ${sizeMB} MB<br>Downloading...`;
+
+                    // Download
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'animated-background.gif';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+
+                    // Show completion
+                    setTimeout(() => {
+                        progressSection.classList.remove('active');
+                        generateBtn.disabled = false;
+                    }, 2000);
+                });
+
+                gif.on('error', function (error) {
+                    statusText.innerHTML = `❌ Error: ${error}`;
+                    generateBtn.disabled = false;
+                });
+
+                gif.render();
+
+            } catch (error) {
+                console.error('Error:', error);
+                statusText.innerHTML = `❌ Error: ${error.message}`;
+                generateBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

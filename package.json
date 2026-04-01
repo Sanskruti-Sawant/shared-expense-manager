@@ -1,0 +1,11 @@
+{
+  "name": "shared-living-manager",
+  "version": "1.0.0",
+  "description": "Full-stack Shared Living Expense & Task Management System",
+  "author": "",
+  "license": "MIT",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ]
+}
