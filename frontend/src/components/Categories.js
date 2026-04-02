@@ -13,11 +13,21 @@ function UserManagement({ scrollY, users, onUsersChange }) {
     try {
       setLoading(true);
       setError('');
-      await userAPI.create({ name: newUserName });
+      
+      // Add member to backend
+      const response = await userAPI.create({ name: newUserName });
+      console.log('Member added successfully:', response.data);
+      
+      // Clear input
       setNewUserName('');
+      
+      // Wait a moment then refresh data to ensure database is updated
+      await new Promise(resolve => setTimeout(resolve, 500));
       onUsersChange();
+      
     } catch (error) {
-      setError('Error adding member: ' + (error.response?.data?.error || error.message));
+      const errorMsg = error.response?.data?.error || error.message;
+      setError('Error adding member: ' + errorMsg);
       console.error('Error adding user:', error);
     } finally {
       setLoading(false);

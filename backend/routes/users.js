@@ -123,13 +123,14 @@ router.get('/', authMiddleware, async (req, res) => {
     const userId = req.user.userId;
     
     // Get current user
-    const currentUser = await db.get('SELECT id, name, createdAt FROM users WHERE id = ?', [userId]);
+    const currentUser = await db.get('SELECT id, name, email, createdAt FROM users WHERE id = ?', [userId]);
     
     if (!currentUser) {
+      console.warn('Current user not found:', userId);
       return res.json([]);
     }
     
-    // Return all members of the current user's household (including themselves and any added members)
+    // Get all household members
     const members = await db.all(`
       SELECT id, name, createdAt
       FROM household_members
@@ -137,11 +138,19 @@ router.get('/', authMiddleware, async (req, res) => {
       ORDER BY createdAt ASC
     `, [userId]);
     
+    // Combine current user with household members
     const allMembers = [
-      { id: currentUser.id, name: currentUser.name, createdAt: currentUser.createdAt },
-      ...members
+      { 
+        id: currentUser.id, 
+        name: currentUser.name,
+        email: currentUser.email,
+        createdAt: currentUser.createdAt,
+        isCurrentUser: true
+      },
+      ...(members || [])
     ];
     
+    console.log('GET /users returning members:', allMembers.map(m => m.name));
     res.json(allMembers);
   } catch (err) {
     console.error('Error in GET /users:', err);

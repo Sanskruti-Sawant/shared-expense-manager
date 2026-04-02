@@ -55,9 +55,11 @@ function MainApp() {
 
       if (usersRes.ok) {
         const userData = await usersRes.json();
+        console.log('Users fetched:', userData.length, 'members -', userData.map(u => u.name).join(', '));
         setUsers(userData);
       } else {
         console.error('Users API error:', usersRes.status);
+        setUsers([]);
       }
       
       if (expensesRes.ok) setExpenses(await expensesRes.json());
