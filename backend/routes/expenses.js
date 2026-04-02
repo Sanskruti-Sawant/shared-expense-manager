@@ -14,14 +14,25 @@ router.get('/', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
     
+    // Get all household member IDs for this household
+    const memberIds = await db.all(
+      'SELECT id FROM household_members WHERE householdId = ?',
+      [userId]
+    );
+    const memberIdList = memberIds.map(m => m.id);
+    const allUserIds = [userId, ...memberIdList];
+    
+    // Build WHERE clause for all household members
+    const placeholders = allUserIds.map(() => '?').join(',');
+    
     const expenses = await db.all(`
       SELECT e.*
       FROM expenses e 
-      WHERE e.paidBy = ? OR e.id IN (
-        SELECT expenseId FROM expense_participants WHERE userId = ?
+      WHERE e.paidBy IN (${placeholders}) OR e.id IN (
+        SELECT expenseId FROM expense_participants WHERE userId IN (${placeholders})
       )
       ORDER BY e.date DESC
-    `, [userId, userId]);
+    `, [...allUserIds, ...allUserIds]);
     
     // Get participants for each expense
     for (let expense of expenses) {
