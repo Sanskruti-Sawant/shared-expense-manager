@@ -60,12 +60,12 @@ const initialize = () => {
       title TEXT NOT NULL,
       description TEXT,
       assignedTo TEXT NOT NULL,
+      createdBy TEXT NOT NULL,
       status TEXT DEFAULT 'pending',
       priority TEXT DEFAULT 'medium',
       dueDate DATETIME,
       completedAt DATETIME,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (assignedTo) REFERENCES users(id)
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
     // Task history table
@@ -129,6 +129,13 @@ const initialize = () => {
     db.run('ALTER TABLE expenses ADD COLUMN paidByName TEXT', (err) => {
       if (err && !err.message.includes('duplicate column name')) {
         console.log('Migration info (paidByName):', err.message);
+      }
+    });
+
+    // Migration: Add createdBy column to tasks if it doesn't exist
+    db.run('ALTER TABLE tasks ADD COLUMN createdBy TEXT', (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.log('Migration info (tasks createdBy):', err.message);
       }
     });
 
