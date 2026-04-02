@@ -1,18 +1,21 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const db = require('../database');
+const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
 // Calculate who owes whom
-router.get('/balances', async (req, res) => {
+router.get('/balances', authMiddleware, async (req, res) => {
   try {
     const users = await db.all('SELECT id, name FROM users');
+    const members = await db.all('SELECT id, name FROM household_members');
+    const allPeople = [...users, ...members];
     const balances = {};
 
     // Initialize balances
-    for (let user of users) {
-      balances[user.id] = { name: user.name, balance: 0, owes: {} };
+    for (let person of allPeople) {
+      balances[person.id] = { name: person.name, balance: 0, owes: {} };
     }
 
     // Calculate expenses paid by each user
@@ -27,6 +30,9 @@ router.get('/balances', async (req, res) => {
       // Each participant owes the payer their share
       for (let participant of participants) {
         if (participant.userId !== expense.paidBy) {
+          if (!balances[expense.paidBy]) {
+            balances[expense.paidBy] = { name: expense.paidByName, balance: 0, owes: {} };
+          }
           if (!balances[expense.paidBy].owes[participant.userId]) {
             balances[expense.paidBy].owes[participant.userId] = 0;
           }
@@ -53,23 +59,27 @@ router.get('/balances', async (req, res) => {
 
     res.json(balances);
   } catch (err) {
+    console.error('Get balances error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
 // Get settlement suggestions
-router.get('/suggestions', async (req, res) => {
+router.get('/suggestions', authMiddleware, async (req, res) => {
   try {
-    const balances = await db.all('SELECT id, name FROM users');
+    const users = await db.all('SELECT id, name FROM users');
+    const members = await db.all('SELECT id, name FROM household_members');
+    const allPeople = [...users, ...members];
+    
     const expenses = await db.all('SELECT * FROM expenses');
     const graph = {};
 
     // Initialize graph
-    for (let user of balances) {
-      graph[user.id] = {};
-      for (let other of balances) {
-        if (user.id !== other.id) {
-          graph[user.id][other.id] = 0;
+    for (let person of allPeople) {
+      graph[person.id] = {};
+      for (let other of allPeople) {
+        if (person.id !== other.id) {
+          graph[person.id][other.id] = 0;
         }
       }
     }
@@ -83,6 +93,12 @@ router.get('/suggestions', async (req, res) => {
 
       for (let participant of participants) {
         if (participant.userId !== expense.paidBy) {
+          if (!graph[participant.userId]) {
+            graph[participant.userId] = {};
+          }
+          if (!graph[participant.userId][expense.paidBy]) {
+            graph[participant.userId][expense.paidBy] = 0;
+          }
           graph[participant.userId][expense.paidBy] += participant.amount;
         }
       }
@@ -104,12 +120,13 @@ router.get('/suggestions', async (req, res) => {
 
     res.json(settlements);
   } catch (err) {
+    console.error('Get suggestions error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
 // Record a settlement
-router.post('/', async (req, res) => {
+router.post('/', authMiddleware, async (req, res) => {
   try {
     const { fromUser, toUser, amount } = req.body;
     
@@ -125,12 +142,13 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({ id, fromUser, toUser, amount, status: 'pending' });
   } catch (err) {
+    console.error('Create settlement error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
 // Mark settlement as completed
-router.put('/:id/complete', async (req, res) => {
+router.put('/:id/complete', authMiddleware, async (req, res) => {
   try {
     const settledAt = new Date().toISOString();
     await db.run(
@@ -141,6 +159,7 @@ router.put('/:id/complete', async (req, res) => {
     const settlement = await db.get('SELECT * FROM settlements WHERE id = ?', [req.params.id]);
     res.json(settlement);
   } catch (err) {
+    console.error('Complete settlement error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
