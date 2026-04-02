@@ -984,6 +984,15 @@ input[type="checkbox"] {
   margin-top: 0;
 }
 
+/* Desktop Tabs */
+.desktop-tabs {
+  display: flex;
+}
+
+.mobile-menu-container {
+  display: none;
+}
+
 .tabs-nav {
   display: flex;
   overflow-x: auto;
@@ -1033,6 +1042,99 @@ input[type="checkbox"] {
   color: #ffffff;
   border-bottom-color: #d8a4b8;
   background: rgba(192, 132, 168, 0.15);
+}
+
+/* Mobile Menu */
+.mobile-menu-toggle {
+  display: none;
+  width: 100%;
+  padding: 1rem;
+  background: transparent;
+  border: none;
+  color: var(--pink-light);
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  align-items: center;
+  gap: 0.75rem;
+  justify-content: space-between;
+  border-bottom: 2px solid rgba(192, 132, 168, 0.3);
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-toggle:hover {
+  background: rgba(192, 132, 168, 0.1);
+  color: #e8c4d4;
+}
+
+.mobile-menu-toggle svg {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.mobile-menu-label {
+  flex-grow: 1;
+  text-align: left;
+}
+
+.mobile-menu-dropdown {
+  background: rgba(26, 10, 46, 0.98);
+  backdrop-filter: blur(15px);
+  border-bottom: 2px solid rgba(192, 132, 168, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 1rem;
+  background: transparent;
+  border: none;
+  color: var(--pink-light);
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 4px solid transparent;
+}
+
+.mobile-menu-item:hover {
+  background: rgba(192, 132, 168, 0.1);
+  color: #e8c4d4;
+}
+
+.mobile-menu-item.active {
+  background: rgba(192, 132, 168, 0.15);
+  color: #ffffff;
+  border-left-color: #d8a4b8;
+}
+
+.mobile-menu-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.mobile-menu-text {
+  flex-grow: 1;
+  text-align: left;
 }
 
 /* Tab Content */
@@ -1101,6 +1203,28 @@ input[type="checkbox"] {
 
 /* Responsive Tabs */
 @media (max-width: 768px) {
+  .desktop-tabs {
+    display: none;
+  }
+
+  .mobile-menu-container {
+    display: block;
+  }
+
+  .mobile-menu-toggle {
+    padding: 1rem;
+    font-size: 0.95rem;
+  }
+
+  .mobile-menu-item {
+    padding: 1rem;
+    font-size: 0.95rem;
+  }
+
+  .mobile-menu-icon {
+    font-size: 1.2rem;
+  }
+
   .tabs-nav {
     padding: 0 1rem;
   }
@@ -1118,9 +1242,40 @@ input[type="checkbox"] {
   .tab-content {
     padding: 1.5rem 1rem;
   }
+
+  /* Tablet optimizations */
+  .header {
+    padding: 0.9rem 1.2rem;
+  }
+
+  .logo h1 {
+    font-size: 1.6rem;
+  }
 }
 
 @media (max-width: 480px) {
+  .desktop-tabs {
+    display: none;
+  }
+
+  .mobile-menu-container {
+    display: block;
+  }
+
+  .mobile-menu-toggle {
+    padding: 0.9rem;
+    font-size: 0.9rem;
+  }
+
+  .mobile-menu-item {
+    padding: 0.9rem;
+    font-size: 0.9rem;
+  }
+
+  .mobile-menu-icon {
+    font-size: 1.1rem;
+  }
+
   .tab-button {
     padding: 0.7rem 0.8rem;
     font-size: 0.75rem;
@@ -1149,6 +1304,50 @@ input[type="checkbox"] {
 
   .stats-card-value {
     font-size: 1.5rem;
+  }
+
+  /* Mobile App Styling */
+  .header {
+    padding: 0.8rem 1rem;
+  }
+
+  .header-top {
+    font-size: 0.65rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .logo h1 {
+    font-size: 1.4rem;
+  }
+
+  .logo p {
+    font-size: 0.6rem;
+  }
+
+  .App {
+    padding-bottom: 80px;
+  }
+
+  /* Mobile-friendly form inputs */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Better touch targets */
+  button {
+    min-height: 44px;
+  }
+
+  .tab-button {
+    min-height: 44px;
+  }
+
+  .mobile-menu-toggle {
+    min-height: 44px;
+  }
+
+  .mobile-menu-item {
+    min-height: 48px;
   }
 }
 

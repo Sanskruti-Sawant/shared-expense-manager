@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { MdMenu, MdClose, MdDashboard, MdPeople, MdAttachMoney, MdTask, MdSwapHoriz } from 'react-icons/md';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import Header from './components/Header';
@@ -20,6 +21,7 @@ const API_BASE = process.env.NODE_ENV === 'production'
 function MainApp() {
   const [scrollY, setScrollY] = useState(0);
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [users, setUsers] = useState([]);
   const [expenses, setExpenses] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -100,11 +102,11 @@ function MainApp() {
   }
 
   const tabs = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'members', label: 'Members' },
-    { id: 'expenses', label: 'Expenses' },
-    { id: 'tasks', label: 'Tasks' },
-    { id: 'settlements', label: 'Settlements' }
+    { id: 'dashboard', label: 'Dashboard', icon: <MdDashboard /> },
+    { id: 'members', label: 'Members', icon: <MdPeople /> },
+    { id: 'expenses', label: 'Expenses', icon: <MdAttachMoney /> },
+    { id: 'tasks', label: 'Tasks', icon: <MdTask /> },
+    { id: 'settlements', label: 'Settlements', icon: <MdSwapHoriz /> }
   ];
 
   const renderContent = () => {
@@ -134,7 +136,8 @@ function MainApp() {
             <Header scrollY={scrollY} userCount={users.length} onRefresh={handleRefresh} />
             
             <div className="tabs-container">
-              <div className="tabs-nav">
+              {/* Desktop Tabs */}
+              <div className="tabs-nav desktop-tabs">
                 {tabs.map(tab => (
                   <button
                     key={tab.id}
@@ -144,6 +147,37 @@ function MainApp() {
                     {tab.label}
                   </button>
                 ))}
+              </div>
+
+              {/* Mobile Dropdown Menu */}
+              <div className="mobile-menu-container">
+                <button 
+                  className="mobile-menu-toggle"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                >
+                  {mobileMenuOpen ? <MdClose /> : <MdMenu />}
+                  <span className="mobile-menu-label">
+                    {tabs.find(t => t.id === activeTab)?.label}
+                  </span>
+                </button>
+
+                {mobileMenuOpen && (
+                  <div className="mobile-menu-dropdown">
+                    {tabs.map(tab => (
+                      <button
+                        key={tab.id}
+                        className={`mobile-menu-item ${activeTab === tab.id ? 'active' : ''}`}
+                        onClick={() => {
+                          setActiveTab(tab.id);
+                          setMobileMenuOpen(false);
+                        }}
+                      >
+                        <span className="mobile-menu-icon">{tab.icon}</span>
+                        <span className="mobile-menu-text">{tab.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
