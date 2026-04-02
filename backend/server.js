@@ -42,10 +42,18 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'Server is running', timestamp: new Date() });
 });
 
-// Debug endpoint - check database state
-app.get('/api/debug/db-schema', (req, res) => {
+// Debug endpoint - check household members in database
+app.get('/api/debug/household-members-raw', (req, res) => {
   try {
-    res.json({ message: 'Debug endpoint - database schema check' });
+    db.db.all('SELECT * FROM household_members LIMIT 100', (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+      res.json({ 
+        count: rows?.length || 0, 
+        members: rows || [] 
+      });
+    });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
