@@ -46,9 +46,6 @@ function MainApp() {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
 
-      console.log('Fetching data from:', API_BASE);
-      console.log('Token present:', !!token);
-
       const [usersRes, expensesRes, tasksRes, settlementsRes] = await Promise.all([
         fetch(`${API_BASE}/users`, { headers }),
         fetch(`${API_BASE}/expenses`, { headers }),
@@ -56,19 +53,11 @@ function MainApp() {
         fetch(`${API_BASE}/settlements/balances`, { headers })
       ]);
 
-      console.log('API Responses:', {
-        users: usersRes.status,
-        expenses: expensesRes.status,
-        tasks: tasksRes.status,
-        settlements: settlementsRes.status
-      });
-
       if (usersRes.ok) {
         const userData = await usersRes.json();
-        console.log('Users data:', userData);
         setUsers(userData);
       } else {
-        console.error('Users API error:', usersRes.status, await usersRes.text());
+        console.error('Users API error:', usersRes.status);
       }
       
       if (expensesRes.ok) setExpenses(await expensesRes.json());

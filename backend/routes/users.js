@@ -121,14 +121,11 @@ router.post('/login', async (req, res) => {
 router.get('/', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.userId;
-    console.log('GET /users - fetching members for userId:', userId);
     
     // Get current user
     const currentUser = await db.get('SELECT id, name, createdAt FROM users WHERE id = ?', [userId]);
-    console.log('Current user:', currentUser);
     
     if (!currentUser) {
-      console.warn('Current user not found, returning empty array');
       return res.json([]);
     }
     
@@ -140,14 +137,11 @@ router.get('/', authMiddleware, async (req, res) => {
       ORDER BY createdAt ASC
     `, [userId]);
     
-    console.log('Household members:', members);
-    
     const allMembers = [
       { id: currentUser.id, name: currentUser.name, createdAt: currentUser.createdAt },
       ...members
     ];
     
-    console.log('Returning all members:', allMembers);
     res.json(allMembers);
   } catch (err) {
     console.error('Error in GET /users:', err);
@@ -160,8 +154,6 @@ router.post('/', authMiddleware, async (req, res) => {
   try {
     const { name } = req.body;
     const currentUserId = req.user.userId;
-    
-    console.log('POST /users - Adding member:', { name, userId: currentUserId });
 
     if (!name || name.trim() === '') {
       return res.status(400).json({ error: 'Name is required' });
@@ -178,14 +170,11 @@ router.post('/', authMiddleware, async (req, res) => {
 
     // Add the member (no account required!)
     const memberId = require('uuid').v4();
-    console.log('Inserting member:', { memberId, currentUserId, name: name.trim() });
     
     await db.run(
       'INSERT INTO household_members (id, householdId, name) VALUES (?, ?, ?)',
       [memberId, currentUserId, name.trim()]
     );
-    
-    console.log('Member added successfully');
 
     res.status(201).json({
       message: 'Member added successfully',

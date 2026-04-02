@@ -5,16 +5,13 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 const authMiddleware = (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    console.log('Auth check - Token present:', !!token);
     
     if (!token) {
       console.warn('Auth check - No token provided');
       return res.status(401).json({ error: 'No token provided' });
     }
 
-    console.log('Verifying token with JWT_SECRET length:', JWT_SECRET.length);
     const decoded = jwt.verify(token, JWT_SECRET);
-    console.log('Token verified for user:', decoded.userId);
     req.user = decoded;
     next();
   } catch (err) {

@@ -33,34 +33,7 @@ app.get('/api/health', (req, res) => {
 // Debug endpoint - check database state
 app.get('/api/debug/db-schema', (req, res) => {
   try {
-    // Check all table schemas
-    db.db.all(`
-      SELECT name FROM sqlite_master 
-      WHERE type='table' 
-      ORDER BY name
-    `, (err, tables) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      
-      const schemas = {};
-      let completed = 0;
-      
-      tables.forEach(table => {
-        db.db.all(`PRAGMA table_info(${table.name})`, (err, columns) => {
-          if (err) {
-            schemas[table.name] = { error: err.message };
-          } else {
-            schemas[table.name] = columns.map(c => ({ name: c.name, type: c.type }));
-          }
-          completed++;
-          
-          if (completed === tables.length) {
-            res.json({ tables: schemas });
-          }
-        });
-      });
-    });
+    res.json({ message: 'Debug endpoint - database schema check' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -68,12 +41,7 @@ app.get('/api/debug/db-schema', (req, res) => {
 
 app.get('/api/debug/users-count', (req, res) => {
   try {
-    db.db.get('SELECT COUNT(*) as count FROM users', (err, row) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json({ users_count: row.count });
-    });
+    res.json({ message: 'Debug endpoint - users count' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -81,12 +49,7 @@ app.get('/api/debug/users-count', (req, res) => {
 
 app.get('/api/debug/members-count', (req, res) => {
   try {
-    db.db.get('SELECT COUNT(*) as count FROM household_members', (err, row) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-      res.json({ members_count: row.count });
-    });
+    res.json({ message: 'Debug endpoint - members count' });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
