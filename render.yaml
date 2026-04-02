@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: shared-expense-backend
+    runtime: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        value: shared-household-expense-manager-2024-secret-key-v1
+      - key: PORT
+        value: 5000
+
+  - type: static
+    name: shared-expense-manager-frontend
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/build
+    envVars:
+      - key: REACT_APP_API_BASE
+        value: https://shared-expense-backend.onrender.com/api
