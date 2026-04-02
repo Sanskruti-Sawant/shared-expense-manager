@@ -27,12 +27,12 @@ const initialize = () => {
       description TEXT NOT NULL,
       amount REAL NOT NULL,
       paidBy TEXT NOT NULL,
+      paidByName TEXT,
       category TEXT,
       usedFromBudget INTEGER DEFAULT 0,
       expenseMonth TEXT,
       date DATETIME DEFAULT CURRENT_TIMESTAMP,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (paidBy) REFERENCES users(id)
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
     // Monthly budgets table
@@ -51,8 +51,7 @@ const initialize = () => {
       amount REAL NOT NULL,
       splitType TEXT DEFAULT 'equal',
       createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (expenseId) REFERENCES expenses(id),
-      FOREIGN KEY (userId) REFERENCES users(id)
+      FOREIGN KEY (expenseId) REFERENCES expenses(id)
     )`);
 
     // Tasks table
@@ -123,6 +122,13 @@ const initialize = () => {
     db.run('ALTER TABLE household_members ADD COLUMN name TEXT', (err) => {
       if (err && !err.message.includes('duplicate column name')) {
         console.log('Migration info (household_members name):', err.message);
+      }
+    });
+
+    // Migration: Add paidByName column to expenses if it doesn't exist
+    db.run('ALTER TABLE expenses ADD COLUMN paidByName TEXT', (err) => {
+      if (err && !err.message.includes('duplicate column name')) {
+        console.log('Migration info (paidByName):', err.message);
       }
     });
 

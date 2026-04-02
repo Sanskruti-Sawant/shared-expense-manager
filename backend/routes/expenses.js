@@ -15,9 +15,8 @@ router.get('/', authMiddleware, async (req, res) => {
     const userId = req.user.userId;
     
     const expenses = await db.all(`
-      SELECT e.*, u.name as paidByName 
+      SELECT e.*
       FROM expenses e 
-      LEFT JOIN users u ON e.paidBy = u.id 
       WHERE e.paidBy = ? OR e.id IN (
         SELECT expenseId FROM expense_participants WHERE userId = ?
       )
@@ -27,15 +26,18 @@ router.get('/', authMiddleware, async (req, res) => {
     // Get participants for each expense
     for (let expense of expenses) {
       expense.participants = await db.all(`
-        SELECT ep.*, u.name 
+        SELECT ep.id, ep.expenseId, ep.userId, ep.amount, ep.splitType,
+               COALESCE(u.name, hm.name) as name
         FROM expense_participants ep 
         LEFT JOIN users u ON ep.userId = u.id 
+        LEFT JOIN household_members hm ON ep.userId = hm.id
         WHERE ep.expenseId = ?
       `, [expense.id]);
     }
     
     res.json(expenses);
   } catch (err) {
+    console.error('Get expenses error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -141,6 +143,21 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Invalid month format. Use YYYY-MM' });
     }
 
+    // Look up who paid (could be user or household member)
+    let paidByName = null;
+    const user = await db.get('SELECT name FROM users WHERE id = ?', [paidBy]);
+    if (user) {
+      paidByName = user.name;
+    } else {
+      // Try to find in household_members
+      const member = await db.get('SELECT name FROM household_members WHERE id = ?', [paidBy]);
+      if (member) {
+        paidByName = member.name;
+      } else {
+        return res.status(400).json({ error: 'Invalid paidBy: user or household member not found' });
+      }
+    }
+
     if (shouldUseBudget) {
       const budget = await db.get('SELECT * FROM monthly_budgets WHERE month = ?', [month]);
       if (!budget) {
@@ -154,8 +171,8 @@ router.post('/', authMiddleware, async (req, res) => {
 
     const expenseId = uuidv4();
     await db.run(
-      'INSERT INTO expenses (id, description, amount, paidBy, category, usedFromBudget, expenseMonth) VALUES (?, ?, ?, ?, ?, ?, ?)',
-      [expenseId, description, parsedAmount, paidBy, category, shouldUseBudget ? 1 : 0, month]
+      'INSERT INTO expenses (id, description, amount, paidBy, paidByName, category, usedFromBudget, expenseMonth) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [expenseId, description, parsedAmount, paidBy, paidByName, category, shouldUseBudget ? 1 : 0, month]
     );
 
     if (shouldUseBudget) {
@@ -182,11 +199,13 @@ router.post('/', authMiddleware, async (req, res) => {
       description,
       amount: parsedAmount,
       paidBy,
+      paidByName,
       category,
       usedFromBudget: shouldUseBudget,
       expenseMonth: month
     });
   } catch (err) {
+    console.error('Expense creation error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
